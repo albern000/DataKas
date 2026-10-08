@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kas Kelas Bulanan</title>
+<style>
+:root{
+  --bg:#f1f4f1; --card:#fff; --text:#14231f; --muted:#5d6f69; --line:#cbd6cf; --soft:#f5f8f5;
+  --brand:#16453a; --brand-text:#fff; --paid:#dff3e6; --in:#17794a; --out:#b3362b;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,Menlo,Consolas,monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0f1917; --card:#16241f; --text:#e5efeb; --muted:#93a8a1; --line:#2f443c; --soft:#1b2c26;
+        --brand:#5bc4a0; --brand-text:#0b1c17; --paid:#1f4a37; --in:#59d391; --out:#ff8a7d}
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); line-height:1.45}
+.wrap{max-width:900px; margin:0 auto; padding:0 14px 48px}
+.menu{display:flex; gap:6px; padding:10px 0; margin-bottom:6px; position:sticky; top:env(safe-area-inset-top,0px); background:var(--bg); z-index:5; border-bottom:1.5px solid var(--line)}
+.menu a{flex:1; text-align:center; text-decoration:none; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:8px; padding:9px 10px; font-size:.92rem}
+.menu a:hover{border-color:var(--brand)}
+.menu a[aria-current="page"]{background:var(--brand); color:var(--brand-text); border-color:var(--brand); font-weight:600}
+:focus-visible{outline:3px solid var(--brand); outline-offset:2px; border-radius:4px}
+button{font:inherit; cursor:pointer}
+.num{font-family:var(--mono); font-variant-numeric:tabular-nums}
+
+.bar{display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 14px}
+.btn{background:var(--card); color:var(--text); border:1.5px solid var(--line); border-radius:8px; padding:9px 14px; font-size:.92rem}
+.btn:hover{border-color:var(--brand)}
+.btn.primary{background:var(--brand); color:var(--brand-text); border-color:var(--brand); font-weight:600}
+.btn.armed{background:var(--out); color:#fff; border-color:var(--out)}
+.btn.kecil{padding:6px 12px; font-size:.85rem; margin-top:8px}
+
+.doc{background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:20px}
+.kop{text-align:center; border-bottom:3px double var(--text); padding-bottom:10px; margin-bottom:14px}
+.kop h1{font-size:1.35rem; margin:0 0 8px}
+.kop .baris{display:flex; gap:8px 18px; justify-content:center; flex-wrap:wrap; font-size:.95rem; align-items:center}
+.kop label{color:var(--muted); display:flex; align-items:center; gap:6px}
+
+input{font:inherit; color:var(--text); background:transparent; border:0; border-bottom:1.5px dashed var(--line); border-radius:0; padding:5px 4px; min-width:0; width:100%}
+input:focus{background:var(--soft); outline:0; border-bottom-color:var(--brand)}
+input::placeholder{color:var(--muted); opacity:.6}
+.kop input{width:auto; text-align:center}
+#kelas{width:9ch} #bulan{width:15ch} #nominal{width:9ch}
+input[type=number]{-moz-appearance:textfield; appearance:textfield; text-align:right}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0}
+
+h2{font-size:1rem; margin:20px 0 6px}
+.tabel{overflow-x:auto; border:1.5px solid var(--line); border-radius:8px}
+table{width:100%; border-collapse:collapse; font-size:.9rem}
+th,td{border:1px solid var(--line); padding:4px 6px; vertical-align:middle}
+.tabel table{border:0}
+th{background:var(--soft); font-size:.8rem; font-weight:600; white-space:nowrap; text-align:center; padding:8px 6px}
+td.no{text-align:center; color:var(--muted); width:34px}
+td.c{text-align:center; width:40px; padding:0}
+td.c label{display:flex; align-items:center; justify-content:center; height:36px; cursor:pointer}
+td.jml,td.r{text-align:right; white-space:nowrap}
+input[type=checkbox]{width:20px; height:20px; accent-color:var(--brand); cursor:pointer; padding:0; border:0; min-width:0}
+tr.paid td.nama-c{background:transparent}
+tfoot td,tr.total td{font-weight:600; background:var(--soft)}
+td.masuk{color:var(--in)} td.keluar{color:var(--out)}
+.ringkas td:first-child{width:60%}
+.ringkas tr.akhir td{font-weight:700; font-size:1.05rem; background:var(--soft); border-top:2px solid var(--text)}
+.ringkas input{font-family:var(--mono)}
+.info{font-size:.85rem; color:var(--muted); margin:6px 0 0}
+
+.catatan{margin-top:14px; font-size:.85rem; color:var(--muted)}
+@media (max-width:560px){ .doc{padding:12px} }
+
+/* === PERBAIKAN CETAK / PDF === */
+@page{
+  size:A4;
+  margin:15mm 10mm;
+}
+@media print{
+  :root{
+    --bg:#fff !important; --card:#fff !important; --text:#000 !important;
+    --muted:#444 !important; --line:#777 !important; --soft:#f0f0f0 !important;
+    --brand:#000 !important; --paid:#ddd !important; --in:#000 !important; --out:#000 !important;
+  }
+  *{
+    -webkit-print-color-adjust:exact !important;
+    print-color-adjust:exact !important;
+  }
+  html,body{background:#fff !important; font-size:11pt !important; width:100%}
+  .wrap{max-width:none !important; padding:0 !important; margin:0 !important; width:100%}
+  .noprint{display:none !important;}
+  .doc{border:none !important; padding:0 !important; border-radius:0 !important; width:100%}
+  .tabel{border:1px solid #000 !important; overflow:visible !important; width:100%}
+  table{width:100% !important; table-layout:fixed}
+  th,td{border:1px solid #333 !important; padding:4px 3px !important; font-size:9pt !important}
+  td.c label{height:auto !important; display:block}
+  input[type=checkbox]{
+    width:14px !important; height:14px !important;
+    -webkit-appearance:checkbox !important; appearance:checkbox !important;
+    opacity:1 !important; position:relative !important;
+  }
+  input{
+    border:none !important; border-bottom:none !important;
+    padding:1px !important; background:transparent !important;
+    color:#000 !important;
+    box-shadow:none !important; outline:none !important;
+  }
+  input::placeholder{color:transparent !important}
+  .kop{border-bottom:2px solid #000 !important}
+  tr,.blok{break-inside:avoid !important}
+  thead{display:table-header-group !important}
+  h2{margin-top:12px !important; margin-bottom:4px !important; font-size:11pt !important}
+  .num{font-size:9pt !important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="menu noprint" aria-label="Pindah halaman">
+    <a href="#" aria-current="page">Catatan iuran</a>
+    <a href="Data_tunggakan.html">Tunggakan</a>
+  </nav>
+
+  <div class="bar noprint">
+    <button class="btn primary" id="cetak" type="button">📄 Cetak / Simpan PDF</button>
+    <button class="btn" id="baru" type="button">Mulai bulan baru</button>
+  </div>
+
+  <main class="doc">
+    <header class="kop">
+      <h1>Catatan Iuran Kas Kelas</h1>
+      <div class="baris">
+        <label>Kelas <input id="kelas" placeholder="X-A" aria-label="Kelas"></label>
+        <label>Bulan <input id="bulan" placeholder="Januari 2027" aria-label="Bulan"></label>
+        <label>Iuran per minggu Rp <input id="nominal" type="number" inputmode="numeric" min="0" step="any" placeholder="5000" aria-label="Iuran per minggu dalam rupiah"></label>
+      </div>
+    </header>
+
+    <div class="blok">
+      <h2>Iuran per siswa</h2>
+      <div class="tabel"><table>
+        <thead><tr>
+          <th scope="col" style="width:8%">No</th>
+          <th scope="col" style="width:32%">Nama</th>
+          <th scope="col" style="width:10%">M1</th>
+          <th scope="col" style="width:10%">M2</th>
+          <th scope="col" style="width:10%">M3</th>
+          <th scope="col" style="width:10%">M4</th>
+          <th scope="col" style="width:10%">M5</th>
+          <th scope="col" style="width:15%">Jumlah</th>
+          <th scope="col" style="width:15%">Ket.</th>
+        </tr></thead>
+        <tbody id="siswa"></tbody>
+        <tfoot><tr id="footSiswa"></tr></tfoot>
+      </table></div>
+      <button class="btn kecil noprint" id="tambahSiswa" type="button">Tambah baris siswa</button>
+      <p class="info noprint">Centang minggu yang sudah bayar. Jumlah rupiah dihitung otomatis.</p>
+    </div>
+
+    <div class="blok">
+      <h2>Pengeluaran bulan ini</h2>
+      <div class="tabel"><table>
+        <thead><tr>
+          <th scope="col" style="width:20%">Tanggal</th>
+          <th scope="col" style="width:50%">Keterangan</th>
+          <th scope="col" style="width:30%">Jumlah (Rp)</th>
+        </tr></thead>
+        <tbody id="keluar"></tbody>
+        <tfoot><tr>
+          <td colspan="2"><strong>Total pengeluaran</strong></td>
+          <td class="r num" id="totKeluar">0</td>
+        </tr></tfoot>
+      </table></div>
+      <button class="btn kecil noprint" id="tambahKeluar" type="button">Tambah baris pengeluaran</button>
+    </div>
+
+    <div class="blok">
+      <h2>Ringkasan bulan ini</h2>
+      <div class="tabel"><table class="ringkas">
+        <tbody>
+          <tr>
+            <td>Saldo bulan lalu</td>
+            <td><input id="saldoLalu" class="num" type="number" inputmode="numeric" step="any" placeholder="0" aria-label="Saldo bulan lalu"></td>
+          </tr>
+          <tr>
+            <td>Total iuran masuk</td>
+            <td class="r num masuk" id="rMasuk">Rp0</td>
+          </tr>
+          <tr>
+            <td>Total pengeluaran</td>
+            <td class="r num keluar" id="rKeluar">Rp0</td>
+          </tr>
+          <tr class="akhir">
+            <td><strong>Saldo akhir</strong></td>
+            <td class="r num" id="rAkhir">Rp0</td>
+          </tr>
+        </tbody>
+      </table></div>
+    </div>
+
+  </main>
+
+  <p class="catatan noprint">💡 Cara simpan PDF: tekan tombol di atas → pilih "Simpan sebagai PDF" di bagian Tujuan → tekan Simpan. Isian tersimpan otomatis di perangkat ini.</p>
+</div>
+
+<script>
+const KEY = "kas-kelas-otomatis-v2";
+const $ = id => document.getElementById(id);
+const rp = n => (n < 0 ? "-" : "") + "Rp" + Math.abs(Math.round(n)).toLocaleString("id-ID");
+const num = n => Math.round(n).toLocaleString("id-ID");
+
+const barisSiswa = () => ({ nama: "", m: [0,0,0,0,0], ket: "" });
+const barisKeluar = () => ({ tgl: "", ket: "", jml: "" });
+const awal = () => ({
+  kelas: "", bulan: "", nominal: "", saldoLalu: "",
+  siswa: Array.from({ length: 35 }, barisSiswa),
+  keluar: Array.from({ length: 6 }, barisKeluar)
+});
+let S = awal();
+try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(awal(), JSON.parse(raw)); } catch (e) {}
+const jmlCell = new WeakMap();
+const simpan = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+const angka = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+
+function td(cls) { const t = document.createElement("td"); if (cls) t.className = cls; return t; }
+function teks(val, ph, label, onInput) {
+  const i = document.createElement("input"); i.value = val; i.placeholder = ph || ""; i.setAttribute("aria-label", label);
+  i.addEventListener("input", () => { onInput(i.value); simpan(); }); return i;
+}
+
+function tambahSiswaDom(s, idx) {
+  const tr = document.createElement("tr");
+  const no = td("no"); no.textContent = idx + 1; tr.append(no);
+  const n = td(); n.append(teks(s.nama, "Nama siswa", "Nama siswa nomor " + (idx + 1), v => s.nama = v)); tr.append(n);
+  for (let w = 0; w < 5; w++) {
+    const c = td("c"), lab = document.createElement("label"), cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = !!s.m[w]; cb.setAttribute("aria-label", "Minggu " + (w + 1) + ", siswa nomor " + (idx + 1));
+    cb.addEventListener("change", () => { s.m[w] = cb.checked ? 1 : 0; simpan(); hitung(); });
+    lab.append(cb); c.append(lab); tr.append(c);
+  }
+  const j = td("jml num"); tr.append(j);
+  const k = td(); k.append(teks(s.ket, "", "Keterangan siswa nomor " + (idx + 1), v => s.ket = v)); tr.append(k);
+  jmlCell.set(s, j); $("siswa").append(tr);
+}
+function tambahKeluarDom(k, idx) {
+  const tr = document.createElement("tr");
+  const a = td(); a.append(teks(k.tgl, "tanggal", "Tanggal pengeluaran " + (idx + 1), v => k.tgl = v));
+  const b = td(); b.append(teks(k.ket, "Untuk apa", "Keterangan pengeluaran " + (idx + 1), v => k.ket = v));
+  const c = td("r"); const i = document.createElement("input");
+  i.type = "number"; i.inputMode = "numeric"; i.step = "any"; i.min = "0"; i.placeholder = "0"; i.className = "num"; i.value = k.jml;
+  i.setAttribute("aria-label", "Jumlah pengeluaran " + (idx + 1));
+  i.addEventListener("input", () => { k.jml = i.value; simpan(); hitung(); });
+  c.append(i); tr.append(a, b, c); $("keluar").append(tr);
+}
+
+function bangun() {
+  $("siswa").replaceChildren(); $("keluar").replaceChildren();
+  S.siswa.forEach(tambahSiswaDom); S.keluar.forEach(tambahKeluarDom);
+  ["kelas","bulan"].forEach(k => { $(k).value = S[k] || ""; });
+  $("nominal").value = S.nominal; $("saldoLalu").value = S.saldoLalu;
+  hitung();
+}
+
+function hitung() {
+  const nom = angka(S.nominal);
+  let totalIuran = 0; const perMinggu = [0,0,0,0,0];
+  S.siswa.forEach(s => {
+    const n = s.m.reduce((a, b) => a + b, 0);
+    s.m.forEach((v, w) => perMinggu[w] += v);
+    totalIuran += n * nom;
+    const cell = jmlCell.get(s); if (cell) cell.textContent = n ? num(n * nom) : "";
+  });
+  const foot = $("footSiswa"); foot.replaceChildren();
+  const l = td(); l.colSpan = 2; l.textContent = "Jumlah yang bayar"; foot.append(l);
+  perMinggu.forEach(n => { const c = td("c"); c.style.textAlign = "center"; c.textContent = n || ""; foot.append(c); });
+  const tj = td("jml num"); tj.textContent = num(totalIuran); foot.append(tj, td());
+
+  const keluar = S.keluar.reduce((a, k) => a + angka(k.jml), 0);
+  $("totKeluar").textContent = num(keluar);
+  $("rMasuk").textContent = rp(totalIuran);
+  $("rKeluar").textContent = rp(keluar);
+  const akhir = angka(S.saldoLalu) + totalIuran - keluar;
+  $("rAkhir").textContent = rp(akhir);
+  return akhir;
+}
+
+["kelas","bulan"].forEach(k => $(k).addEventListener("input", () => { S[k] = $(k).value; simpan(); }));
+$("nominal").addEventListener("input", () => { S.nominal = $("nominal").value; simpan(); hitung(); });
+$("saldoLalu").addEventListener("input", () => { S.saldoLalu = $("saldoLalu").value; simpan(); hitung(); });
+
+$("tambahSiswa").addEventListener("click", () => { const s = barisSiswa(); S.siswa.push(s); tambahSiswaDom(s, S.siswa.length - 1); simpan(); hitung(); });
+$("tambahKeluar").addEventListener("click", () => { const k = barisKeluar(); S.keluar.push(k); tambahKeluarDom(k, S.keluar.length - 1); simpan(); });
+
+$("cetak").addEventListener("click", () => {
+  try {
+    window.print();
+  } catch (e) {
+    alert("⚠️ Jika tidak muncul: tekan Ctrl+P (komputer) atau menu → Cetak (HP)");
+  }
+});
+
+let armed = null;
+$("baru").addEventListener("click", () => {
+  const b = $("baru");
+  if (!armed) {
+    b.textContent = "Yakin? Tekan lagi (sudah simpan PDF?)";
+    b.classList.add("armed");
+    armed = setTimeout(() => {
+      armed = null;
+      b.textContent = "Mulai bulan baru";
+      b.classList.remove("armed");
+    }, 5000);
+    return;
+  }
+  clearTimeout(armed); armed = null;
+  b.textContent = "Mulai bulan baru"; b.classList.remove("armed");
+  const akhir = hitung();
+  S.saldoLalu = String(Math.round(akhir));
+  S.siswa.forEach(s => { s.m = [0,0,0,0,0]; s.ket = ""; });
+  S.keluar = Array.from({ length: 6 }, barisKeluar);
+  S.bulan = "";
+  simpan(); bangun();
+});
+
+bangun();
+</script>
+</body>
+</html>

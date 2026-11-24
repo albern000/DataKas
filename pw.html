@@ -11,20 +11,98 @@
 h1{font-size:27px;margin:20px 0 5px}.sub{margin:0 0 25px;color:var(--muted)}
 label{display:block;margin:15px 0 7px;font-weight:650;font-size:14px}.field{width:100%;padding:14px 15px;border:1px solid var(--line);border-radius:12px;background:#081e30;color:var(--text);font:inherit;outline:none}.field:focus{border-color:var(--accent);box-shadow:0 0 0 3px #45d6b022}
 button{font:inherit;cursor:pointer}.submit{width:100%;margin-top:22px;padding:14px;border:0;border-radius:12px;background:linear-gradient(90deg,var(--accent),#76e4ca);color:#062338;font-weight:800}
-#pesan{min-height:24px;color:var(--danger);font-size:14px;margin:12px 0 0}.hint{font-size:12px;color:var(--muted);margin-top:22px;line-height:1.6}
+.pesan{min-height:24px;color:var(--danger);font-size:14px;margin:12px 0 0}.pesan.ok{color:var(--accent)}.hint{font-size:12px;color:var(--muted);margin-top:22px;line-height:1.6}
+.link{display:block;margin:16px auto 0;padding:6px;border:0;background:none;color:var(--accent2);font-size:14px;text-decoration:underline}
+.link:hover{color:var(--accent)}.link:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tanya{margin:0;padding:12px 14px;border:1px dashed var(--line);border-radius:12px;background:#0a2438;color:var(--text);font-size:14px}
+[hidden]{display:none!important}
 </style></head>
-<body><main class="card"><div class="logo">K</div><h1>Kas Kelas</h1><p class="sub">Silakan masuk untuk mengelola kas kelas.</p>
+<body><main class="card"><div class="logo">K</div>
+
+<!-- ===== TAMPILAN LOGIN ===== -->
+<section id="viewLogin">
+<h1>Kas Kelas</h1><p class="sub">Silakan masuk untuk mengelola kas kelas.</p>
 <form id="form"><label for="username">Username</label><input class="field" id="username" autocomplete="username" required placeholder="Masukkan username">
 <label for="password">Password</label><input class="field" id="password" type="password" autocomplete="current-password" required placeholder="Masukkan password">
-<button class="submit" type="submit">Masuk ke Dashboard →</button><p id="pesan" role="alert"></p></form>
-<p class="hint">Akun awal dapat diubah pada bagian PENGATURAN LOGIN di dalam file <b>pw.html</b>.</p></main>
+<button class="submit" type="submit">Masuk ke Dashboard →</button><p id="pesan" class="pesan" role="alert"></p></form>
+<button class="link" type="button" id="btnLupa">Lupa password?</button>
+<p class="hint">Akun awal dapat diubah pada bagian PENGATURAN LOGIN di dalam file <b>pw.html</b>.</p>
+</section>
+
+<!-- ===== TAMPILAN LUPA PASSWORD ===== -->
+<section id="viewLupa" hidden>
+<h1>Lupa password</h1><p class="sub">Jawab pertanyaan keamanan untuk membuat password baru.</p>
+
+<form id="formVerif">
+<label for="lupaUser">Username</label><input class="field" id="lupaUser" autocomplete="username" required placeholder="Masukkan username">
+<label for="lupaJawab">Pertanyaan keamanan</label><p class="tanya" id="teksTanya"></p>
+<input class="field" id="lupaJawab" required placeholder="Jawaban Anda" style="margin-top:10px" autocomplete="off">
+<button class="submit" type="submit">Verifikasi jawaban</button><p id="pesanVerif" class="pesan" role="alert"></p>
+</form>
+
+<form id="formBaru" hidden>
+<label for="passBaru">Password baru</label><input class="field" id="passBaru" type="password" minlength="6" required placeholder="Minimal 6 karakter" autocomplete="new-password">
+<label for="passUlang">Ulangi password baru</label><input class="field" id="passUlang" type="password" minlength="6" required placeholder="Ketik ulang password baru" autocomplete="new-password">
+<button class="submit" type="submit">Simpan password baru</button><p id="pesanBaru" class="pesan" role="alert"></p>
+</form>
+
+<button class="link" type="button" id="btnKembali">← Kembali ke login</button>
+</section>
+</main>
+
 <script>
+/* ===== PENGATURAN LOGIN ===== */
 const USERNAME="bendahara";
 const PASSWORD="xiitkj2";
-document.getElementById("form").addEventListener("submit",e=>{
+/* ===== PENGATURAN LUPA PASSWORD (ubah sesuai keinginan Anda) ===== */
+const PERTANYAAN="Siapa nama wali kelas kita?";
+const JAWABAN="ubah-jawaban-ini";   /* huruf besar/kecil tidak dibedakan */
+
+const $=id=>document.getElementById(id);
+const KUNCI="kas_password_baru";
+function simpanPassword(v){try{localStorage.setItem(KUNCI,v);return true}catch(e){return false}}
+function passwordAktif(){try{return localStorage.getItem(KUNCI)||PASSWORD}catch(e){return PASSWORD}}
+const norm=s=>s.trim().toLowerCase().replace(/\s+/g," ");
+
+/* Login */
+$("form").addEventListener("submit",e=>{
  e.preventDefault();
- const u=document.getElementById("username").value.trim(),p=document.getElementById("password").value;
- if(u===USERNAME&&p===PASSWORD){sessionStorage.setItem("kas_login","ya");location.href="Data_iuran.html";}
- else document.getElementById("pesan").textContent="Username atau password salah. Silakan coba lagi.";
+ const u=$("username").value.trim(),p=$("password").value;
+ if(u===USERNAME&&p===passwordAktif()){sessionStorage.setItem("kas_login","ya");location.href="Data_iuran.html";}
+ else{$("pesan").className="pesan";$("pesan").textContent="Username atau password salah. Silakan coba lagi.";}
+});
+
+/* Pindah tampilan */
+function tampil(lupa){
+ $("viewLogin").hidden=lupa;$("viewLupa").hidden=!lupa;
+ if(lupa){
+  $("teksTanya").textContent=PERTANYAAN;
+  $("formVerif").hidden=false;$("formBaru").hidden=true;
+  $("formVerif").reset();$("formBaru").reset();
+  $("pesanVerif").textContent="";$("pesanBaru").textContent="";
+  $("lupaUser").focus();
+ }else $("username").focus();
+}
+$("btnLupa").addEventListener("click",()=>tampil(true));
+$("btnKembali").addEventListener("click",()=>tampil(false));
+
+/* Langkah 1: verifikasi username + jawaban */
+$("formVerif").addEventListener("submit",e=>{
+ e.preventDefault();
+ const ok=$("lupaUser").value.trim()===USERNAME&&norm($("lupaJawab").value)===norm(JAWABAN);
+ if(!ok){$("pesanVerif").textContent="Username atau jawaban tidak cocok. Silakan coba lagi.";return;}
+ $("formVerif").hidden=true;$("formBaru").hidden=false;$("passBaru").focus();
+});
+
+/* Langkah 2: simpan password baru */
+$("formBaru").addEventListener("submit",e=>{
+ e.preventDefault();
+ const a=$("passBaru").value,b=$("passUlang").value,pesan=$("pesanBaru");
+ pesan.className="pesan";
+ if(a.length<6){pesan.textContent="Password minimal 6 karakter.";return;}
+ if(a!==b){pesan.textContent="Kedua password belum sama. Periksa kembali.";return;}
+ if(!simpanPassword(a)){pesan.textContent="Password tidak bisa disimpan di browser ini. Coba browser lain.";return;}
+ pesan.className="pesan ok";pesan.textContent="Password berhasil diganti. Mengarahkan ke halaman login…";
+ setTimeout(()=>{tampil(false);$("pesan").className="pesan ok";$("pesan").textContent="Silakan masuk dengan password baru.";},1400);
 });
 </script></body></html>
